@@ -6,6 +6,7 @@ import com.duva.taskflow.entity.Role;
 import com.duva.taskflow.entity.User;
 import com.duva.taskflow.repository.RoleRepository;
 import com.duva.taskflow.repository.UserRepository;
+import com.duva.taskflow.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -30,6 +31,9 @@ public class AuthService {
 
     // Gestionnaire d'authentification Spring Security
     private final AuthenticationManager authenticationManager;
+
+    // Gestionnaire d'authentification JWT
+    private final JwtService jwtService;
 
 
     //  INSCRIPTION
@@ -71,7 +75,6 @@ public class AuthService {
 
     public String login(LoginRequest request) {
 
-        // Authentifie l'utilisateur via Spring Security
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getEmail(),
@@ -79,7 +82,7 @@ public class AuthService {
                 )
         );
 
-        // Si on arrive ici → authentification réussie
-        return "Login successful";
+        // Generate JWT after successful authentication
+        return jwtService.generateToken(request.getEmail());
     }
 }
