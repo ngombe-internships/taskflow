@@ -1,14 +1,11 @@
 package com.duva.taskflow.entity;
 
-import com.duva.taskflow.entity.enums.Priority;
 import com.duva.taskflow.entity.enums.Status;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
 @Getter
@@ -16,8 +13,9 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "tasks")
-public class Task {
+@Table(name = "sub_tasks")
+public class SubTask {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -28,42 +26,27 @@ public class Task {
 
     private String description;
 
-    private LocalDate startDate;
-
-    private LocalDate dueDate;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Status status;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Priority priority;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
 
+    // Parent task
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-
-    //RELATION INVERSE
-    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<SubTask> subTasks;
+    @JoinColumn(name = "task_id", nullable = false)
+    private Task task;
 
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
-
-
     }
 
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-
-
 }

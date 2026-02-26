@@ -1,148 +1,148 @@
-TaskFlow API
+ PRÉSENTATION DU PROJET
 
-TaskFlow is a secure RESTful API for task management built with Spring Boot and secured using Spring Security with JWT authentication.
+TaskFlow est une API REST sécurisée développée avec Spring Boot permettant la gestion 
+des Tâches (Tasks) et Sous-Tâches (SubTasks) avec une logique métier intelligente 
+et une authentification basée sur JWT.
 
-The application provides user registration, authentication, role-based authorization, and will support full task management features.
+Fonctionnalités principales :
+- Authentification JWT
+- Autorisation basée sur les rôles (ROLE_USER / ROLE_ADMIN)
+- Pagination des données
+- Recalcul automatique du statut des tâches
+- Architecture en couches propre (Clean Architecture)
+- Base de données MySQL
+- Java 17
+- Maven
 
- Features
 
- JWT Authentication
+ ARCHITECTURE
 
- User Registration & Login
+Le projet suit une architecture en couches :
 
- Role-Based Authorization (USER / ADMIN)
+Controller → Service → Repository → Base de données
 
- Stateless Security (No Sessions)
+Structure des packages :
 
- Password Encryption using BCrypt
-
- MySQL Database Integration
-
- Layered Architecture (Controller → Service → Repository)
-
-🛠 Technologies Used
-
-Java 17
-
-Spring Boot
-
-Spring Security
-
-MySQL
-
-JWT (io.jsonwebtoken)
-
-Lombok
-
-Maven
-
- Project Structure
 com.duva.taskflow
 │
-├── config
-│   ├── SecurityConfig
-│   └── DataInitializer
-│
-├── controller
-│   └── AuthController
-│
-├── dto
-│   ├── LoginRequest
-│   └── RegisterRequest
-│
-├── entity
-│   ├── User
-│   └── Role
-│
-├── repository
-│   ├── UserRepository
-│   └── RoleRepository
-│
-├── security
-│   ├── JwtService
-│   ├── JwtAuthenticationFilter
-│   └── CustomUserDetailsService
-│
-├── service
-│   └── AuthService
-│
-└── TaskflowApplication
- Authentication Flow
+├── config        → Configuration sécurité et initialisation
+├── controller    → Contrôleurs REST
+├── dto           → Objets de transfert de données (DTO)
+├── entity        → Entités JPA
+├── repository    → Interfaces Spring Data JPA
+├── service       → Logique métier
+└── security      → Gestion JWT et authentification
 
-User registers via:
+ SÉCURITÉ
 
+L’authentification repose sur :
+- Spring Security
+- JWT (JSON Web Token)
+- Contrôle d’accès basé sur les rôles
+
+Endpoints publics :
 POST /api/auth/register
-
-User logs in via:
-
 POST /api/auth/login
 
-API returns a JWT token.
+Tous les autres endpoints nécessitent un token JWT valide.
 
-Client must include the token in future requests:
 
-Authorization: Bearer <token>
+ LOGIQUE MÉTIER INTELLIGENTE
 
-JWT filter validates the token and grants access.
+Recalcul automatique du statut d’une Task :
 
-📡 API Endpoints
- Public Endpoints
-Method	Endpoint	Description
-POST	/api/auth/register	Register new user
-POST	/api/auth/login	Authenticate user
- Protected Endpoints
-Endpoint	Access
-/api/admin/**	ROLE_ADMIN
-Other endpoints	Authenticated users
- Database Schema
-users
-Field	Type
-id	BIGINT
-name	VARCHAR
-email	VARCHAR (unique)
-password	VARCHAR
-enabled	BOOLEAN
-role_id	FK
-roles
-Field	Type
-id	BIGINT
-name	VARCHAR (unique)
- Configuration
+Lorsqu’une SubTask est mise à jour :
 
-Make sure MySQL is running and create a database:
+- Si toutes les SubTasks sont COMPLETED → la Task devient COMPLETED
+- Si au moins une SubTask n’est pas complétée → la Task devient IN_PROGRESS
+- S’il n’y a aucune SubTask → la Task devient PENDING
 
-CREATE DATABASE taskflow_db;
+Cette logique garantit la cohérence des données et un comportement intelligent du système.
 
-Configure your application.yml or application.properties:
 
-spring:
-datasource:
-url: jdbc:mysql://localhost:3306/taskflow_db
-username: root
-password: root
-▶ Running the Project
-mvn clean install
-mvn spring-boot:run
+ BASE DE DONNÉES
 
-The application will start at:
+- MySQL
+- JPA / Hibernate
+- Les enums sont stockés en STRING
+- Mise à jour automatique du schéma (ddl-auto=update)
 
+
+ GUIDE D’INSTALLATION
+
+1. Cloner le projet :
+   git clone <url_du_repository>
+
+2. Configurer la base de données dans application.properties :
+
+   spring.datasource.url=jdbc:mysql://localhost:3306/taskflow
+   spring.datasource.username=root
+   spring.datasource.password=motdepasse
+   spring.jpa.hibernate.ddl-auto=update
+
+3. Lancer l’application :
+   mvn clean install
+   mvn spring-boot:run
+
+Serveur accessible sur :
 http://localhost:8080
- Testing with Postman
 
-Register a user
 
-Login and copy the token
 
-Use Authorization: Bearer <token> for protected routes
+ ENDPOINTS API
 
- Upcoming Features
+Authentification :
+POST /api/auth/register
+POST /api/auth/login
 
-Task CRUD
+Tasks :
+POST   /api/tasks
+GET    /api/tasks?page=0&size=10
+GET    /api/tasks/{id}
+PUT    /api/tasks/{id}
+DELETE /api/tasks/{id}
 
-Subtask management
+SubTasks :
+POST   /api/subtasks/task/{taskId}
+GET    /api/subtasks/task/{taskId}?page=0&size=10
+PUT    /api/subtasks/{subTaskId}
+DELETE /api/subtasks/{subTaskId}
 
-Deadline tracking
 
-Filtering by status and priority
+ PAGINATION
 
-Dashboard statistics
+Les endpoints paginés supportent :
+?page=0&size=10&sort=createdAt,desc
+
+
+ TESTS
+
+Utiliser Postman :
+
+1. Se connecter et récupérer le JWT
+2. Ajouter dans les headers :
+   Authorization: Bearer <token>
+3. Tester les endpoints sécurisés
+
+
+ TECHNOLOGIES UTILISÉES
+
+- Java 17
+- Spring Boot 3
+- Spring Security
+- JWT
+- Spring Data JPA
+- MySQL
+- Maven
+- Lombok
+
+
+ AMÉLIORATIONS FUTURES
+
+- Système de refresh token
+- Gestion des commentaires sur les tâches
+- Pièces jointes
+- Filtrage et recherche avancée
+- Documentation Swagger 
+- Support Docker
+- Tests unitaires et d’intégration
