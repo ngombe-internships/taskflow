@@ -17,7 +17,6 @@ import java.time.LocalDateTime;
 @Builder
 @Table(name = "tasks")
 public class Task {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -58,4 +57,6 @@ public class Task {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
+
 }

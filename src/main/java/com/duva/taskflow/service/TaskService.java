@@ -1,5 +1,7 @@
 package com.duva.taskflow.service;
 
+import com.duva.taskflow.dto.TaskRequestDTO;
+import com.duva.taskflow.dto.TaskResponseDTO;
 import com.duva.taskflow.entity.Task;
 import com.duva.taskflow.entity.User;
 import com.duva.taskflow.entity.enums.Status;
@@ -18,6 +20,21 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
 
+    // Convert Task entity to Response DTO
+    private TaskResponseDTO mapToDTO(Task task) {
+        return TaskResponseDTO.builder()
+                .id(task.getId())
+                .title(task.getTitle())
+                .description(task.getDescription())
+                .startDate(task.getStartDate())
+                .dueDate(task.getDueDate())
+                .status(task.getStatus())
+                .priority(task.getPriority())
+                .createdAt(task.getCreatedAt())
+                .updatedAt(task.getUpdatedAt())
+                .build();
+    }
+
     // Get currently authenticated user
     private User getCurrentUser() {
         String email = SecurityContextHolder.getContext()
@@ -29,31 +46,46 @@ public class TaskService {
                         new RuntimeException("User not found"));
     }
 
-    // Create new task for logged-in user
-    public Task createTask(Task task) {
+    // Create new task
+    public TaskResponseDTO createTask(TaskRequestDTO dto) {
 
         User currentUser = getCurrentUser();
 
-        task.setUser(currentUser);
-        task.setStatus(Status.PENDING);
+        Task task = Task.builder()
+                .title(dto.getTitle())
+                .description(dto.getDescription())
+                .startDate(dto.getStartDate())
+                .dueDate(dto.getDueDate())
+                .priority(dto.getPriority())
+                .status(Status.PENDING)
+                .user(currentUser)
+                .build();
 
-        return taskRepository.save(task);
+        Task savedTask = taskRepository.save(task);
+
+        return mapToDTO(savedTask);
     }
 
     // Get paginated tasks of current user
-    public Page<Task> getMyTasks(Pageable pageable) {
+    public Page<TaskResponseDTO> getMyTasks(Pageable pageable) {
+
         User currentUser = getCurrentUser();
-        return taskRepository.findByUser(currentUser, pageable);
+
+        return taskRepository.findByUser(currentUser, pageable)
+                .map(this::mapToDTO);
     }
 
-    // Get paginated tasks of current user filtered by status
-    public Page<Task> getMyTasksByStatus(Status status, Pageable pageable) {
+    // Get paginated tasks filtered by status
+    public Page<TaskResponseDTO> getMyTasksByStatus(Status status, Pageable pageable) {
+
         User currentUser = getCurrentUser();
-        return taskRepository.findByUserAndStatus(currentUser, status, pageable);
+
+        return taskRepository.findByUserAndStatus(currentUser, status, pageable)
+                .map(this::mapToDTO);
     }
 
-    // Get task by id (only if owner or ADMIN)
-    public Task getTaskById(Long id) {
+    // Get task by ID (owner or ADMIN)
+    public TaskResponseDTO getTaskById(Long id) {
 
         User currentUser = getCurrentUser();
 
@@ -68,28 +100,53 @@ public class TaskService {
             throw new RuntimeException("Access denied");
         }
 
-        return task;
+        return mapToDTO(task);
     }
 
     // Update task (owner or ADMIN)
-    public Task updateTask(Long id, Task updatedTask) {
+    public TaskResponseDTO updateTask(Long id, TaskRequestDTO dto) {
 
-        Task existingTask = getTaskById(id);
+        User currentUser = getCurrentUser();
 
-        existingTask.setTitle(updatedTask.getTitle());
-        existingTask.setDescription(updatedTask.getDescription());
-        existingTask.setStartDate(updatedTask.getStartDate());
-        existingTask.setDueDate(updatedTask.getDueDate());
-        existingTask.setPriority(updatedTask.getPriority());
-        existingTask.setStatus(updatedTask.getStatus());
+        Task existingTask = taskRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("Task not found"));
 
-        return taskRepository.save(existingTask);
+        boolean isAdmin =
+                currentUser.getRole().getName().equals("ROLE_ADMIN");
+
+        if (!existingTask.getUser().getId().equals(currentUser.getId()) && !isAdmin) {
+            throw new RuntimeException("Access denied");
+        }
+
+        existingTask.setTitle(dto.getTitle());
+        existingTask.setDescription(dto.getDescription());
+        existingTask.setStartDate(dto.getStartDate());
+        existingTask.setDueDate(dto.getDueDate());
+        existingTask.setPriority(dto.getPriority());
+        existingTask.setStatus(dto.getStatus());
+
+        Task saved = taskRepository.save(existingTask);
+
+        return mapToDTO(saved);
     }
 
     // Delete task (owner or ADMIN)
     public void deleteTask(Long id) {
 
-        Task task = getTaskById(id);
+        User currentUser = getCurrentUser();
+
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("Task not found"));
+
+        boolean isAdmin =
+                currentUser.getRole().getName().equals("ROLE_ADMIN");
+
+        if (!task.getUser().getId().equals(currentUser.getId()) && !isAdmin) {
+            throw new RuntimeException("Access denied");
+        }
+
         taskRepository.delete(task);
     }
 }

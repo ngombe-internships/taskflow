@@ -1,6 +1,7 @@
 package com.duva.taskflow.controller;
 
-import com.duva.taskflow.entity.Task;
+import com.duva.taskflow.dto.TaskRequestDTO;
+import com.duva.taskflow.dto.TaskResponseDTO;
 import com.duva.taskflow.entity.enums.Status;
 import com.duva.taskflow.service.TaskService;
 import lombok.RequiredArgsConstructor;
@@ -17,33 +18,33 @@ public class TaskController {
 
     // Create a new task
     @PostMapping
-    public Task createTask(@RequestBody Task task) {
-        return taskService.createTask(task);
+    public TaskResponseDTO createTask(@RequestBody TaskRequestDTO dto) {
+        return taskService.createTask(dto);
     }
 
     // Get paginated tasks of logged-in user
     @GetMapping
-    public Page<Task> getMyTasks(Pageable pageable) {
+    public Page<TaskResponseDTO> getMyTasks(Pageable pageable) {
         return taskService.getMyTasks(pageable);
     }
 
     // Get task by ID
     @GetMapping("/{id}")
-    public Task getTaskById(@PathVariable Long id) {
+    public TaskResponseDTO getTaskById(@PathVariable Long id) {
         return taskService.getTaskById(id);
     }
 
     // Update task
     @PutMapping("/{id}")
-    public Task updateTask(@PathVariable Long id,
-                           @RequestBody Task task) {
-        return taskService.updateTask(id, task);
+    public TaskResponseDTO updateTask(@PathVariable Long id,
+                                      @RequestBody TaskRequestDTO dto) {
+        return taskService.updateTask(id, dto);
     }
 
     // Get paginated tasks filtered by status
     @GetMapping("/status/{status}")
-    public Page<Task> getTasksByStatus(@PathVariable Status status,
-                                       Pageable pageable) {
+    public Page<TaskResponseDTO> getTasksByStatus(@PathVariable Status status,
+                                                  Pageable pageable) {
         return taskService.getMyTasksByStatus(status, pageable);
     }
 
