@@ -2,46 +2,71 @@ package com.duva.taskflow.service;
 
 import com.duva.taskflow.dto.SubTaskRequestDTO;
 import com.duva.taskflow.dto.SubTaskResponseDTO;
-import com.duva.taskflow.entity.SubTask;
-import com.duva.taskflow.entity.Task;
-import com.duva.taskflow.entity.User;
+import com.duva.taskflow.entity.*;
 import com.duva.taskflow.entity.enums.Status;
 import com.duva.taskflow.repository.SubTaskRepository;
 import com.duva.taskflow.repository.TaskRepository;
 import com.duva.taskflow.repository.UserRepository;
+import com.duva.taskflow.repository.ProjectMemberRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * SubTaskService - Logique métier des sous-tâches
+ *
+ * Responsabilités:
+ * - Créer/lire/mettre à jour/supprimer les sous-tâches
+ * - Vérifier les permissions du projet
+ * - Auto-update du statut de la tâche parente
+ */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 @Transactional
 public class SubTaskService {
 
     private final SubTaskRepository subTaskRepository;
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
+    private final ProjectMemberRepository projectMemberRepository;
 
-    // Get authenticated user
+    // HELPER - GET CURRENT USER
+
     private User getCurrentUser() {
         String email = SecurityContextHolder.getContext()
                 .getAuthentication()
                 .getName();
 
         return userRepository.findByEmail(email)
-                .orElseThrow(() ->
-                        new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
-    // Check if user has ADMIN role
-    private boolean isAdmin(User user) {
-        return user.getRole().getName().equals("ROLE_ADMIN");
+    // HELPER - VERIFY PERMISSIONS
+
+    private Task verifyTaskOwnership(Long taskId) {
+        User currentUser = getCurrentUser();
+
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        //  Vérifier que l'utilisateur est MEMBER ou ADMIN du projet
+        ProjectMember member = projectMemberRepository.findByProjectAndUser(task.getProject(), currentUser)
+                .orElseThrow(() -> new RuntimeException("You are not a member of this project"));
+
+        if (member.getRole() == ProjectMember.ProjectRole.VIEWER) {
+            throw new RuntimeException("Viewers can only read, not modify");
+        }
+
+        return task;
     }
 
-    // Convert entity to DTO
+    // HELPER - MAPPING
+
     private SubTaskResponseDTO mapToDTO(SubTask subTask) {
         return SubTaskResponseDTO.builder()
                 .id(subTask.getId())
@@ -53,26 +78,9 @@ public class SubTaskService {
                 .build();
     }
 
-    // Verify ownership of parent task
-    private Task verifyTaskOwnership(Long taskId) {
+    // CREATE
 
-        User currentUser = getCurrentUser();
-
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(() ->
-                        new RuntimeException("Task not found"));
-
-        if (!task.getUser().getId().equals(currentUser.getId())
-                && !isAdmin(currentUser)) {
-            throw new RuntimeException("Access denied");
-        }
-
-        return task;
-    }
-
-    // Create subtask
     public SubTaskResponseDTO createSubTask(Long taskId, SubTaskRequestDTO dto) {
-
         Task task = verifyTaskOwnership(taskId);
 
         SubTask subTask = SubTask.builder()
@@ -83,34 +91,44 @@ public class SubTaskService {
                 .build();
 
         SubTask saved = subTaskRepository.save(subTask);
+        log.info("SubTask created: {} for task: {}", saved.getId(), taskId);
 
-        // Optional: recalculate after creation
+        //  Auto-update parent task status
         updateParentTaskStatus(taskId);
 
         return mapToDTO(saved);
     }
 
-    // Get paginated subtasks
-    public Page<SubTaskResponseDTO> getSubTasks(Long taskId, Pageable pageable) {
+    // READ
 
-        Task task = verifyTaskOwnership(taskId);
+    public Page<SubTaskResponseDTO> getSubTasks(Long taskId, Pageable pageable) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        User currentUser = getCurrentUser();
+
+        //  Vérifier que l'utilisateur est membre du projet (même VIEWER peut lire)
+        projectMemberRepository.findByProjectAndUser(task.getProject(), currentUser)
+                .orElseThrow(() -> new RuntimeException("You are not a member of this project"));
 
         return subTaskRepository.findByTask(task, pageable)
                 .map(this::mapToDTO);
     }
 
-    // Update subtask
-    public SubTaskResponseDTO updateSubTask(Long subTaskId, SubTaskRequestDTO dto) {
+    // UPDATE
 
+    public SubTaskResponseDTO updateSubTask(Long subTaskId, SubTaskRequestDTO dto) {
         User currentUser = getCurrentUser();
 
         SubTask subTask = subTaskRepository.findById(subTaskId)
-                .orElseThrow(() ->
-                        new RuntimeException("SubTask not found"));
+                .orElseThrow(() -> new RuntimeException("SubTask not found"));
 
-        if (!subTask.getTask().getUser().getId().equals(currentUser.getId())
-                && !isAdmin(currentUser)) {
-            throw new RuntimeException("Access denied");
+        //  Vérifier que l'utilisateur est MEMBER ou ADMIN du projet
+        ProjectMember member = projectMemberRepository.findByProjectAndUser(subTask.getTask().getProject(), currentUser)
+                .orElseThrow(() -> new RuntimeException("You are not a member of this project"));
+
+        if (member.getRole() == ProjectMember.ProjectRole.VIEWER) {
+            throw new RuntimeException("Viewers can only read, not modify");
         }
 
         subTask.setTitle(dto.getTitle());
@@ -118,38 +136,41 @@ public class SubTaskService {
         subTask.setStatus(dto.getStatus());
 
         SubTask saved = subTaskRepository.save(subTask);
+        log.info("SubTask {} updated", subTaskId);
 
-        // Auto update parent task
+        //  Auto-update parent task status
         updateParentTaskStatus(saved.getTask().getId());
 
         return mapToDTO(saved);
     }
 
-    // Delete subtask
-    public void deleteSubTask(Long subTaskId) {
+    // DELETE
 
+    public void deleteSubTask(Long subTaskId) {
         User currentUser = getCurrentUser();
 
         SubTask subTask = subTaskRepository.findById(subTaskId)
-                .orElseThrow(() ->
-                        new RuntimeException("SubTask not found"));
+                .orElseThrow(() -> new RuntimeException("SubTask not found"));
 
-        if (!subTask.getTask().getUser().getId().equals(currentUser.getId())
-                && !isAdmin(currentUser)) {
-            throw new RuntimeException("Access denied");
+        //  Vérifier que l'utilisateur est MEMBER ou ADMIN du projet
+        ProjectMember member = projectMemberRepository.findByProjectAndUser(subTask.getTask().getProject(), currentUser)
+                .orElseThrow(() -> new RuntimeException("You are not a member of this project"));
+
+        if (member.getRole() == ProjectMember.ProjectRole.VIEWER) {
+            throw new RuntimeException("Viewers can only read, not modify");
         }
 
         Long taskId = subTask.getTask().getId();
-
         subTaskRepository.delete(subTask);
+        log.info("SubTask {} deleted", subTaskId);
 
-        // Recalculate parent after deletion
+        //  Auto-update parent task status
         updateParentTaskStatus(taskId);
     }
 
-    // Auto-update parent task status
-    private void updateParentTaskStatus(Long taskId) {
+    // HELPER - AUTO-UPDATE PARENT TASK STATUS
 
+    private void updateParentTaskStatus(Long taskId) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
 
@@ -158,7 +179,6 @@ public class SubTaskService {
         if (subTasks.isEmpty()) {
             task.setStatus(Status.PENDING);
         } else {
-
             boolean allCompleted = subTasks.stream()
                     .allMatch(sub -> sub.getStatus() == Status.COMPLETED);
 
@@ -170,5 +190,6 @@ public class SubTaskService {
         }
 
         taskRepository.save(task);
+        log.debug("Parent task {} status updated", taskId);
     }
 }

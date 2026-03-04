@@ -1,7 +1,7 @@
 package com.duva.taskflow.repository;
 
 import com.duva.taskflow.entity.Task;
-import com.duva.taskflow.entity.User;
+import com.duva.taskflow.entity.Project;
 import com.duva.taskflow.entity.enums.Status;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,9 +9,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface TaskRepository extends JpaRepository<Task, Long> {
 
-    // Get paginated tasks of a specific user
-    Page<Task> findByUser(User user, Pageable pageable);
+    // Récupère toutes les tâches d'un projet (paginé)
+    Page<Task> findByProject(Project project, Pageable pageable);
 
-    // Get paginated tasks of a user filtered by status
-    Page<Task> findByUserAndStatus(User user, Status status, Pageable pageable);
+    // Récupère les tâches d'un projet avec un statut spécifique (paginé)
+    Page<Task> findByProjectAndStatus(Project project, Status status, Pageable pageable);
 }
