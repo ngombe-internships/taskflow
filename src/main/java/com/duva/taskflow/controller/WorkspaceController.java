@@ -36,7 +36,6 @@ public class WorkspaceController {
     private final WorkspaceService workspaceService;
 
     // CREATE
-
     @PostMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<WorkspaceResponseDTO> createWorkspace(
@@ -52,7 +51,6 @@ public class WorkspaceController {
     }
 
     // READ
-
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Page<WorkspaceResponseDTO>> getUserWorkspaces(
@@ -80,7 +78,6 @@ public class WorkspaceController {
     }
 
     // UPDATE
-
     @PutMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<WorkspaceResponseDTO> updateWorkspace(
@@ -95,7 +92,6 @@ public class WorkspaceController {
     }
 
     // DELETE
-
     @DeleteMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<String> deleteWorkspace(
@@ -109,7 +105,6 @@ public class WorkspaceController {
     }
 
     // MEMBERS
-
     @PostMapping("/{id}/members")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<String> addMember(
@@ -139,7 +134,6 @@ public class WorkspaceController {
     }
 
     // HELPER
-
     private WorkspaceResponseDTO mapToDTO(com.duva.taskflow.entity.Workspace workspace) {
         return WorkspaceResponseDTO.builder()
                 .id(workspace.getId())

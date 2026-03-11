@@ -35,9 +35,6 @@ public class ProjectController {
 
     private final ProjectService projectService;
 
-    // ============================================================
-    // CREATE
-    // ============================================================
 
     @PostMapping
     @PreAuthorize("isAuthenticated()")
@@ -54,9 +51,6 @@ public class ProjectController {
                 .body(mapToDTO(project));
     }
 
-    // ============================================================
-    // READ
-    // ============================================================
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
@@ -86,9 +80,7 @@ public class ProjectController {
         return ResponseEntity.ok(mapToDTO(project));
     }
 
-    // ============================================================
-    // UPDATE
-    // ============================================================
+
 
     @PutMapping("/{projectId}")
     @PreAuthorize("isAuthenticated()")
@@ -104,9 +96,7 @@ public class ProjectController {
         return ResponseEntity.ok(mapToDTO(project));
     }
 
-    // ============================================================
-    // DELETE
-    // ============================================================
+
 
     @DeleteMapping("/{projectId}")
     @PreAuthorize("isAuthenticated()")
@@ -121,9 +111,7 @@ public class ProjectController {
         return ResponseEntity.ok("Project deleted successfully");
     }
 
-    // ============================================================
-    // MEMBERS
-    // ============================================================
+
 
     @PostMapping("/{projectId}/members")
     @PreAuthorize("isAuthenticated()")

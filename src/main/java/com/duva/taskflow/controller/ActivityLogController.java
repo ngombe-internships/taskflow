@@ -27,13 +27,7 @@ public class ActivityLogController {
 
     private final ActivityLogService activityLogService;
 
-    // ============================================================
-    // GET ACTIVITY LOG
-    // ============================================================
-
-    /**
-     * Récupère l'historique complet d'une tâche (paginé)
-     */
+     //Récupère l'historique complet d'une tâche (paginé)
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Page<ActivityLogResponseDTO>> getActivityLog(

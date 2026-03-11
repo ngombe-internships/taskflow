@@ -11,17 +11,12 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Global Exception Handler - Centralise la gestion des erreurs
- *
- * Gère automatiquement TOUS les RuntimeException
- */
+// Global Exception Handler - Centralise la gestion des erreurs  Gère automatiquement TOUS les RuntimeException
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    /**
-     * Gère TOUS les RuntimeException (includes custom messages)
-     */
+    // Gère TOUS les RuntimeException (includes custom messages)
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
 
@@ -37,9 +32,8 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(status).body(response);
     }
 
-    /**
-     * Gère les erreurs de validation Spring
-     */
+    //Gère les erreurs de validation Spring
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationError(MethodArgumentNotValidException ex) {
         String message = ex.getBindingResult()
@@ -55,9 +49,8 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
-    /**
-     * Gère les erreurs d'authentification Spring Security
-     */
+    // Gère les erreurs d'authentification Spring Security
+
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<Map<String, Object>> handleBadCredentials(BadCredentialsException ex) {
         Map<String, Object> response = new HashMap<>();
@@ -69,9 +62,8 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 
-    /**
-     * Détermine le HTTP status code basé sur le message d'erreur
-     */
+    // Détermine le HTTP status code basé sur le message d'erreur
+
     private HttpStatus determineStatus(String message) {
         if (message == null) {
             return HttpStatus.INTERNAL_SERVER_ERROR;

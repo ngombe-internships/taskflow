@@ -25,10 +25,7 @@ import java.time.LocalDate;
 public interface TaskSearchRepository extends JpaRepository<Task, Long> {
 
     // SEARCH BY TEXT
-
-    /**
-     * Recherche par titre ou description (LIKE)
-     */
+    //Recherche par titre ou description (LIKE)
     @Query("SELECT t FROM Task t WHERE t.project = :project AND " +
             "(LOWER(t.title) LIKE LOWER(CONCAT('%', :searchText, '%')) OR " +
             "LOWER(t.description) LIKE LOWER(CONCAT('%', :searchText, '%')))")
@@ -38,9 +35,7 @@ public interface TaskSearchRepository extends JpaRepository<Task, Long> {
 
     // FILTER BY STATUS
 
-    /**
-     * Recherche par titre ET statut
-     */
+    // Recherche par titre ET statut
     @Query("SELECT t FROM Task t WHERE t.project = :project AND t.status = :status AND " +
             "LOWER(t.title) LIKE LOWER(CONCAT('%', :searchText, '%'))")
     Page<Task> searchByTitleAndStatus(@Param("project") Project project,
@@ -48,9 +43,7 @@ public interface TaskSearchRepository extends JpaRepository<Task, Long> {
                                       @Param("status") Status status,
                                       Pageable pageable);
 
-    /**
-     * Filtrer par statut uniquement
-     */
+    //Filtrer par statut uniquement
     @Query("SELECT t FROM Task t WHERE t.project = :project AND t.status = :status")
     Page<Task> findByProjectAndStatus(@Param("project") Project project,
                                       @Param("status") Status status,
@@ -58,9 +51,7 @@ public interface TaskSearchRepository extends JpaRepository<Task, Long> {
 
     // FILTER BY PRIORITY
 
-    /**
-     * Recherche par titre ET priorité
-     */
+    //Recherche par titre ET priorité
     @Query("SELECT t FROM Task t WHERE t.project = :project AND t.priority = :priority AND " +
             "LOWER(t.title) LIKE LOWER(CONCAT('%', :searchText, '%'))")
     Page<Task> searchByTitleAndPriority(@Param("project") Project project,
@@ -68,9 +59,7 @@ public interface TaskSearchRepository extends JpaRepository<Task, Long> {
                                         @Param("priority") Priority priority,
                                         Pageable pageable);
 
-    /**
-     * Filtrer par priorité uniquement
-     */
+    //Filtrer par priorité uniquement
     @Query("SELECT t FROM Task t WHERE t.project = :project AND t.priority = :priority")
     Page<Task> findByProjectAndPriority(@Param("project") Project project,
                                         @Param("priority") Priority priority,
@@ -78,18 +67,14 @@ public interface TaskSearchRepository extends JpaRepository<Task, Long> {
 
     // FILTER BY DUE DATE
 
-    /**
-     * Recherche les tâches avec date limite avant une certaine date
-     */
+    // Recherche les tâches avec date limite avant une certaine date/
     @Query("SELECT t FROM Task t WHERE t.project = :project AND t.dueDate <= :dueDate " +
             "ORDER BY t.dueDate ASC")
     Page<Task> findTasksDueBeforeDate(@Param("project") Project project,
                                       @Param("dueDate") LocalDate dueDate,
                                       Pageable pageable);
 
-    /**
-     * Recherche les tâches avec date limite après une certaine date
-     */
+    // Recherche les tâches avec date limite après une certaine date
     @Query("SELECT t FROM Task t WHERE t.project = :project AND t.dueDate >= :dueDate " +
             "ORDER BY t.dueDate ASC")
     Page<Task> findTasksDueAfterDate(@Param("project") Project project,
@@ -98,25 +83,19 @@ public interface TaskSearchRepository extends JpaRepository<Task, Long> {
 
     // FILTER BY ASSIGNED USER
 
-    /**
-     * Recherche les tâches assignées à un utilisateur
-     */
+    //Recherche les tâches assignées à un utilisateur
     @Query("SELECT t FROM Task t WHERE t.project = :project AND t.assignedTo.email = :email")
     Page<Task> findTasksAssignedTo(@Param("project") Project project,
                                    @Param("email") String email,
                                    Pageable pageable);
 
-    /**
-     * Recherche les tâches non assignées
-     */
+    // Recherche les tâches non assignées
     @Query("SELECT t FROM Task t WHERE t.project = :project AND t.assignedTo IS NULL")
     Page<Task> findUnassignedTasks(@Param("project") Project project, Pageable pageable);
 
     // ADVANCED FILTER (COMBINING MULTIPLE FILTERS)
 
-    /**
-     * Recherche avancée: texte + statut + priorité
-     */
+    //Recherche avancée: texte + statut + priorité
     @Query("SELECT t FROM Task t WHERE t.project = :project AND " +
             "LOWER(t.title) LIKE LOWER(CONCAT('%', :searchText, '%')) AND " +
             "t.status = :status AND t.priority = :priority")
@@ -126,9 +105,7 @@ public interface TaskSearchRepository extends JpaRepository<Task, Long> {
                               @Param("priority") Priority priority,
                               Pageable pageable);
 
-    /**
-     * Recherche: texte + statut + assigné à
-     */
+    //Recherche: texte + statut + assigné à
     @Query("SELECT t FROM Task t WHERE t.project = :project AND " +
             "LOWER(t.title) LIKE LOWER(CONCAT('%', :searchText, '%')) AND " +
             "t.status = :status AND t.assignedTo.email = :assignedToEmail")
